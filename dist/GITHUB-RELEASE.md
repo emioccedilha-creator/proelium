@@ -1,5 +1,7 @@
 # Proelium Studio 2.0 para Windows
 
+**[Baixar Proelium Studio para Windows](https://github.com/emioccedilha-creator/proelium/raw/refs/heads/proelium-studio-download/downloads/Proelium-Studio-Windows.zip)**
+
 Versão local com biblioteca visual, até dez imagens por personagem, continuidade, originais preservados, histórico, backups e edição por modelo local em CPU.
 
 Baixe `Proelium-Studio-Windows.zip`, extraia a pasta inteira e abra `ABRIR PROELIUM.cmd`. Não requer instalação manual de Python, Node, ComfyUI ou chave de API. O primeiro uso baixa aproximadamente 5,3 GB de modelos públicos e verifica SHA-256. Requisitos: Windows 10/11 x64, ao menos 12 GB de RAM; 16 GB ou mais recomendados. A edição em CPU pode ser lenta.

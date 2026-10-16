@@ -2,7 +2,7 @@
 
 ## Edição local sem API no Windows
 
-Baixe **[Baixar Proelium Studio para Windows](https://github.com/emioccedilha-creator/proelium/releases/download/proelium-studio-v2.0.0/Proelium-Studio-Windows.zip)**, extraia a pasta inteira e dê dois cliques em **ABRIR PROELIUM.cmd**. O navegador abre automaticamente. Não é necessário instalar Python, Node ou ComfyUI manualmente, criar uma chave nem montar workflows. O runtime e o motor de CPU são incluídos no ZIP. Mantenha a janela do iniciador aberta enquanto usa o aplicativo.
+Baixe **[Baixar Proelium Studio para Windows](https://github.com/emioccedilha-creator/proelium/raw/refs/heads/proelium-studio-download/downloads/Proelium-Studio-Windows.zip)**, extraia a pasta inteira e dê dois cliques em **ABRIR PROELIUM.cmd**. O navegador abre automaticamente. Não é necessário instalar Python, Node ou ComfyUI manualmente, criar uma chave nem montar workflows. O runtime e o motor de CPU são incluídos no ZIP. Mantenha a janela do iniciador aberta enquanto usa o aplicativo.
 
 Na primeira abertura, o programa baixa automaticamente os três modelos públicos fixados em `desktop/model-catalog.json`: aproximadamente **5,3 GB** no total. O download pode ser retomado, verifica SHA-256 e não envia imagens do usuário. Depois da preparação, a edição funciona offline no computador. A interface mostra progresso e erros; não declara o motor pronto se faltar algum arquivo. Arquivos grandes são baixados em paralelo e gravados em fluxo, sem carregar o modelo inteiro na memória durante o download.
 
