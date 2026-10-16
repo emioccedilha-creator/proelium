@@ -1,0 +1,69 @@
+{
+  "kind": "real_model_inference",
+  "platform": "Linux x86_64, CPU only",
+  "cpu_threads": 4,
+  "memory_available_gib": 32,
+  "width": 256,
+  "height": 256,
+  "reference_count": 1,
+  "sampling_steps": 4,
+  "sampling_seconds": 208.09,
+  "generation_seconds": 236.09,
+  "request": "Change the red scarf in image 1 to blue using image 2 as a canonical reference. Preserve the portrait and frame.",
+  "result": "Completed. Red pixels decreased from 2695 to 0; blue pixels increased from 0 to 2711. Output was visually inspected.",
+  "images": {
+    "page": {
+      "sha256": "823ede6e06da44cc1ef3b7a65428d645af7ca627f6100088e384241d58389ee4",
+      "red_pixels": 2695,
+      "blue_pixels": 0
+    },
+    "reference": {
+      "sha256": "b1531b5deb03f57171744b5fdeaa2b672068b5c6c5ea7219b6e3fd4c264355c3",
+      "red_pixels": 0,
+      "blue_pixels": 2695
+    },
+    "result": {
+      "sha256": "57a228491dde7c78ef1cdd93e1b0057959a10d487137c429df160fd7c4483bfd",
+      "red_pixels": 0,
+      "blue_pixels": 2711
+    }
+  },
+  "models": [
+    {
+      "id": "diffusion",
+      "repo": "leejet/FLUX.2-klein-4B-GGUF",
+      "revision": "3b1f5a9dc3abb32238b053aeb3d823c30afdacbd",
+      "filename": "flux-2-klein-4b-Q4_0.gguf",
+      "sha256": "d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4",
+      "size": 2460378560,
+      "url": "https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF/resolve/3b1f5a9dc3abb32238b053aeb3d823c30afdacbd/flux-2-klein-4b-Q4_0.gguf",
+      "local": "diffusion.gguf"
+    },
+    {
+      "id": "text",
+      "repo": "unsloth/Qwen3-4B-GGUF",
+      "revision": "22c9fc8a8c7700b76a1789366280a6a5a1ad1120",
+      "filename": "Qwen3-4B-Q4_K_M.gguf",
+      "sha256": "f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a",
+      "size": 2497281312,
+      "url": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/22c9fc8a8c7700b76a1789366280a6a5a1ad1120/Qwen3-4B-Q4_K_M.gguf",
+      "local": "text.gguf"
+    },
+    {
+      "id": "vae",
+      "repo": "Comfy-Org/flux2-dev",
+      "revision": "ed33133cd56476eac818c0943b6f9419b3e4a3a1",
+      "filename": "split_files/vae/flux2-vae.safetensors",
+      "sha256": "d64f3a68e1cc4f9f4e29b6e0da38a0204fe9a49f2d4053f0ec1fa1ca02f9c4b5",
+      "size": 336213556,
+      "url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/ed33133cd56476eac818c0943b6f9419b3e4a3a1/split_files/vae/flux2-vae.safetensors",
+      "local": "vae.safetensors"
+    }
+  ],
+  "scope_limits": [
+    "Synthetic test image; no Proelium artwork was supplied.",
+    "Does not establish fidelity to every canonical detail, speed at higher resolutions or editing quality for a full manga page.",
+    "Windows binaries verified from official published archive checksums, but Windows launcher not executed in this Linux environment."
+  ],
+  "job": "eca44eac-dd8b-462c-99c1-41cff887483b"
+}

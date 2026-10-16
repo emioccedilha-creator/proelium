@@ -1,0 +1,32 @@
+[
+  {
+    "id": "diffusion",
+    "repo": "leejet/FLUX.2-klein-4B-GGUF",
+    "revision": "3b1f5a9dc3abb32238b053aeb3d823c30afdacbd",
+    "filename": "flux-2-klein-4b-Q4_0.gguf",
+    "sha256": "d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4",
+    "size": 2460378560,
+    "url": "https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF/resolve/3b1f5a9dc3abb32238b053aeb3d823c30afdacbd/flux-2-klein-4b-Q4_0.gguf",
+    "local": "diffusion.gguf"
+  },
+  {
+    "id": "text",
+    "repo": "unsloth/Qwen3-4B-GGUF",
+    "revision": "22c9fc8a8c7700b76a1789366280a6a5a1ad1120",
+    "filename": "Qwen3-4B-Q4_K_M.gguf",
+    "sha256": "f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a",
+    "size": 2497281312,
+    "url": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/22c9fc8a8c7700b76a1789366280a6a5a1ad1120/Qwen3-4B-Q4_K_M.gguf",
+    "local": "text.gguf"
+  },
+  {
+    "id": "vae",
+    "repo": "Comfy-Org/flux2-dev",
+    "revision": "ed33133cd56476eac818c0943b6f9419b3e4a3a1",
+    "filename": "split_files/vae/flux2-vae.safetensors",
+    "sha256": "d64f3a68e1cc4f9f4e29b6e0da38a0204fe9a49f2d4053f0ec1fa1ca02f9c4b5",
+    "size": 336213556,
+    "url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/ed33133cd56476eac818c0943b6f9419b3e4a3a1/split_files/vae/flux2-vae.safetensors",
+    "local": "vae.safetensors"
+  }
+]

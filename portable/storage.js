@@ -1,0 +1,60 @@
+/* Armazenamento portátil IndexedDB. O gerador opcional está separado. */
+const Portable = (()=>{
+ const urls=new Map();
+ const req=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+ const done=t=>new Promise((ok,no)=>{t.oncomplete=ok;t.onabort=()=>no(t.error||Error('Não foi possível gravar'));t.onerror=()=>{}});
+ const ready=(async()=>{if(!globalThis.indexedDB)throw Error('Este navegador bloqueou o armazenamento. Baixe o HTML e abra no Edge ou Chrome, fora da prévia do chat e de janela anônima.');const r=indexedDB.open('proelium-studio-portable-v1',1);r.onblocked=()=>notice('Feche outras abas do Proelium para liberar o banco local.',true);r.onupgradeneeded=()=>{for(const n of ['records','events','files'])r.result.createObjectStore(n,{keyPath:'id'})};const d=await req(r);d.onversionchange=()=>d.close();const t=d.transaction('files');for(const f of await req(t.objectStore('files').getAll()))urls.set(f.id,URL.createObjectURL(f.blob));return d})();
+ const stamp=()=>new Date().toISOString();
+ const uid=()=>{const b=new Uint8Array(16);if(!globalThis.crypto?.getRandomValues)throw Error('Abra o HTML no Edge ou Chrome atualizado. Identificador seguro indisponível neste navegador.');crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,'0')).join('')};
+ const clone=x=>JSON.parse(JSON.stringify(x));
+ async function digest(bytes){if(globalThis.crypto?.subtle)return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');return null}
+ ready.catch(()=>{});
+ async function all(name){const d=await ready;return req(d.transaction(name).objectStore(name).getAll())}
+ async function state(){return {records:await all('records'),events:(await all('events')).sort((a,b)=>b.date.localeCompare(a.date))}}
+ function imageURL(id){return urls.get(id)||''}
+ function log(action,r){return {id:uid(),date:stamp(),action,record_id:r.id,snapshot:JSON.stringify(r)}}
+ async function mutate(p,decision=false){
+  const d=await ready, uploads=p.uploads||(p.upload?[p.upload]:[]), files=[];
+  if(!Array.isArray(uploads)||uploads.length>(p.kind==='reference'?10:1))throw Error('Use até 10 imagens por referência e uma versão de página por vez');
+  for(const u of uploads){
+   const bytes=Uint8Array.from(atob(u.content),c=>c.charCodeAt(0));
+   let type=bytes[0]===137&&bytes[1]===80?'image/png':bytes[0]===255&&bytes[1]===216?'image/jpeg':String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP'?'image/webp':null;
+   if(!type||!bytes.length||bytes.length>25*1024*1024)throw Error('Use PNG, JPEG ou WebP de até 25 MB');
+   files.push({id:uid()+'.'+type.split('/')[1],blob:new Blob([bytes],{type}),name:u.name,hash:await digest(bytes)});
+  }
+  const t=d.transaction(['records','events','files'],'readwrite'),complete=done(t),store=t.objectStore('records');
+  try{
+   const old=p.id?await req(store.get(p.id)):null;let r;
+   if(decision){
+    if(!old||old.kind!=='page'||!Number.isInteger(p.index)||p.index<=0||p.index>=old.versions.length)throw Error('Versão inválida; original protegido');
+    if(!['Aprovado','Rejeitado'].includes(p.decision)||!p.reason?.trim())throw Error('Informe decisão e justificativa');
+    r=clone(old);Object.assign(r.versions[p.index],{decision:p.decision,reason:p.reason});
+   }else{
+    if(!['reference','bible','page','issue'].includes(p.kind)||!p.name?.trim())throw Error('Informe tipo e nome válidos');
+    if(old&&old.kind!==p.kind)throw Error('Tipo imutável');
+    if(['reference','bible'].includes(old?.kind)&&old.status==='Aprovado')throw Error('Cânone aprovado protegido. Crie uma nova proposta.');
+    r={...p,id:p.id||uid(),updated:stamp(),versions:clone(old?.versions||[])};delete r.upload;delete r.uploads;
+    if(r.kind==='reference'&&r.versions.length+files.length>10)throw Error('Limite de 10 imagens por personagem/referência. Nenhum dado foi alterado.');
+    for(const file of files){r.versions.push({file:file.id,name:file.name,date:stamp(),sha256:file.hash,decision:r.kind==='reference'?'Referência':r.versions.length?'Pendente':'Original'});t.objectStore('files').put(file)}
+    if(r.kind==='page'&&!r.versions.length)throw Error('Importe a página original');
+   }
+   store.put(r);t.objectStore('events').put(log(decision?p.decision:old?'Atualização':'Cadastro',r));await complete;
+   for(const f of files)urls.set(f.id,URL.createObjectURL(f.blob));return {id:r.id};
+  }catch(e){try{t.abort()}catch{}await complete.catch(()=>{});if(e.name==='QuotaExceededError')throw Error('Sem espaço no navegador. Exporte um backup e libere espaço no computador. O formulário foi preservado.');throw e}
+ }
+ async function pack(id){const s=await state(),p=s.records.find(r=>r.id===id&&r.kind==='page');if(!p)throw Error('Página não encontrada');const context={pagina:p,referencias:s.records.filter(r=>r.kind==='reference'&&(p.refs||[]).includes(r.id)),biblia_aprovada:s.records.filter(r=>r.kind==='bible'&&r.status==='Aprovado'),defeitos_registrados:s.records.filter(r=>r.kind==='issue'&&r.page===id)};return {context,prompt:'Você está revisando o mangá Proelium. Analise minuciosamente a página anexada comparando as referências. Não invente cânone ausente: declare dúvidas. Preserve a assinatura gráfica aprovada, composição e intenção narrativa. Verifique anatomia, proporções, rostos, roupas, objetos, ferimentos, posições, perspectiva, luz, traço, balões e continuidade de entrada e saída. Para cada defeito, informe quadro e região, evidência, gravidade, correção específica e critério de aceite. Diferencie observações de hipóteses. Corrija somente os problemas indicados, preservando elementos corretos. Não afirme ter editado se apenas analisou. Responda em português brasileiro. As propostas não substituem o cânone aprovado.\n\nDADOS DO PROJETO:\n'+JSON.stringify(context,null,2)}}
+ const enc=new TextEncoder();
+ function crc(bytes){let n=0xffffffff;for(const b of bytes){n^=b;for(let i=0;i<8;i++)n=(n>>>1)^((n&1)?0xedb88320:0)}return (n^0xffffffff)>>>0}
+ // ZIP padrão sem compressão: pode ser aberto pelo Explorador do Windows.
+ async function zip(entries){let offset=0;const chunks=[],central=[];for(const [name,value]of entries){const b=value instanceof Blob?new Uint8Array(await value.arrayBuffer()):enc.encode(value),n=enc.encode(name),c=crc(b),h=new Uint8Array(30+n.length),v=new DataView(h.buffer);v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x800,true);v.setUint32(14,c,true);v.setUint32(18,b.length,true);v.setUint32(22,b.length,true);v.setUint16(26,n.length,true);h.set(n,30);chunks.push(h,b);const ch=new Uint8Array(46+n.length),cv=new DataView(ch.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x800,true);cv.setUint32(16,c,true);cv.setUint32(20,b.length,true);cv.setUint32(24,b.length,true);cv.setUint16(28,n.length,true);cv.setUint32(42,offset,true);ch.set(n,46);central.push(ch);offset+=h.length+b.length}const size=central.reduce((s,c)=>s+c.length,0),end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(8,entries.length,true);ev.setUint16(10,entries.length,true);ev.setUint32(12,size,true);ev.setUint32(16,offset,true);return new Blob([...chunks,...central,end],{type:'application/zip'})}
+ async function archive(id){const files=await all('files'),entries=[];if(id){const p=await pack(id);entries.push(['prompt-work-astra.txt',p.prompt],['revisao.json',JSON.stringify(p.context,null,2)]);const ids=new Set([p.context.pagina,...p.context.referencias].flatMap(r=>r.versions.map(v=>v.file)));for(const f of files)if(ids.has(f.id))entries.push(['files/'+f.id,f.blob])}else{const s=await state();entries.push(['proelium-portable.json',JSON.stringify({format:'proelium-portable',version:1,...s},null,2)]);for(const f of files)entries.push(['files/'+f.id,f.blob])}return zip(entries)}
+ async function restore(file){const bytes=new Uint8Array(await file.arrayBuffer()),v=new DataView(bytes.buffer),entries=new Map();let pos=0;while(pos+30<=bytes.length&&v.getUint32(pos,true)===0x04034b50){if(v.getUint16(pos+8,true)!==0||v.getUint16(pos+6,true)&8)throw Error('Selecione o ZIP original gerado nesta versão portátil');const size=v.getUint32(pos+18,true),len=v.getUint16(pos+26,true),extra=v.getUint16(pos+28,true),start=pos+30+len+extra,name=new TextDecoder().decode(bytes.slice(pos+30,pos+30+len)),data=bytes.slice(start,start+size);if(start+size>bytes.length||crc(data)!==v.getUint32(pos+14,true))throw Error('Backup corrompido');entries.set(name,data);pos=start+size}
+ const raw=entries.get('proelium-portable.json');if(!raw)throw Error('Use um backup completo da versão portátil, não um pacote de revisão');const s=JSON.parse(new TextDecoder().decode(raw));if(s.format!=='proelium-portable'||s.version!==1||!Array.isArray(s.records)||!Array.isArray(s.events))throw Error('Backup inválido');const files=[];const ids=new Set();for(const r of s.records){if(typeof r.id!=='string'||ids.has(r.id)||!['page','reference','bible','issue'].includes(r.kind)||typeof r.name!=='string'||!Array.isArray(r.versions))throw Error('Registros inválidos');ids.add(r.id);for(const ver of r.versions){if(!/^[a-zA-Z0-9.-]+$/.test(ver.file)||!entries.has('files/'+ver.file))throw Error('Imagem ausente ou inválida no backup')}}for(const e of s.events){if(typeof e.id!=='string'||typeof e.date!=='string'||typeof e.snapshot!=='string')throw Error('Histórico inválido');JSON.parse(e.snapshot)}for(const [name,b]of entries)if(name.startsWith('files/')){const id=name.slice(6);if(!/^[a-zA-Z0-9.-]+$/.test(id))throw Error('Arquivo inválido');files.push({id,blob:new Blob([b],{type:id.endsWith('.png')?'image/png':id.endsWith('.webp')?'image/webp':'image/jpeg'})})}
+ const d=await ready,t=d.transaction(['records','events','files'],'readwrite'),complete=done(t);for(const n of ['records','events','files'])t.objectStore(n).clear();for(const r of s.records)t.objectStore('records').put(r);for(const e of s.events)t.objectStore('events').put(e);for(const f of files)t.objectStore('files').put(f);await complete;for(const u of urls.values())URL.revokeObjectURL(u);urls.clear();for(const f of files)urls.set(f.id,URL.createObjectURL(f.blob));
+ }
+ async function api(path,data){let timer;try{await Promise.race([ready,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('O armazenamento não respondeu. Abra o HTML baixado no Edge ou Chrome, fora da prévia do chat, e feche outras abas do Proelium.')),10000)})])}finally{clearTimeout(timer)};const [route,query]=path.split('?'),id=new URLSearchParams(query).get('id');if(route==='state')return state();if(route==='save')return mutate(data);if(route==='decide')return mutate(data,true);if(route==='package')return pack(id);throw Error('Operação não disponível')}
+ async function download(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
+ document.addEventListener('click',async e=>{const a=e.target.closest('a[href^="/api/"]');if(!a)return;e.preventDefault();try{const u=new URL(a.getAttribute('href'),'https://local.invalid');await download(await archive(u.searchParams.get('id')),a.download||'proelium-backup.zip');notice('Arquivo preparado. Guarde o backup fora do navegador.')}catch(err){notice('Não foi possível exportar: '+err.message,true)}});
+ document.addEventListener('DOMContentLoaded',()=>{document.querySelector('#restore').onclick=()=>document.querySelector('#backupfile').click();document.querySelector('#backupfile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{if((await state()).records.length&&!confirm('Restaurar substitui o arquivo local atual. Exporte um backup antes de continuar. Deseja substituir?'))return;await restore(f);await refresh();notice('Backup restaurado com sucesso.')}catch(err){notice(err.message,true)}finally{e.target.value=''}}});
+ return {api,imageURL,archive,restore,ready};
+})();
